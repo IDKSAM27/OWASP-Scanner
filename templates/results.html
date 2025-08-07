@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scan Results</title>
+</head>
+<body>
+    <h1>Scan Results for: {{ url }}</h1>
+    
+    {% for result in results %}
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+            <h2>{{ result.vulnerability }}</h2>
+            <p><strong>Vulnerable:</strong> 
+                <span style="color: {% if result.vulnerable %}red{% else %}green{% endif %};">
+                    {{ result.vulnerable }}
+                </span>
+            </p>
+            <p><strong>Details:</strong> {{ result.details }}</p>
+        </div>
+    {% endfor %}
+
+    <a href="/">Scan another site</a>
+</body>
+</html>

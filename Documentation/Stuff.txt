@@ -1,0 +1,20 @@
+1. Git clone - clone the shit out of this repo
+
+2. Create a python virtual environment: 
+    (In VSCode)
+    Ctrl + Shift + P
+    Search: Create environment
+    Choose the python version
+
+    Wait until the .venv file is created
+
+    Open the terminal, now you'll see (.venv) prefix in the terminal -> hence you're in the environment
+
+3. Run: 
+    pip install -r requirements.txt 
+
+4. Run the app.py
+
+
+# IMP:
+    Read Approach.txt
