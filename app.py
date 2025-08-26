@@ -1,30 +1,47 @@
-from flask import Flask, render_template, request
+from flask import Flask, request, jsonify
+from flask_cors import CORS  # Import CORS
+
+# Import our scanners
 from scanner.vulnerabilities.clickjacking_scanner import ClickjackingScanner
+from scanner.vulnerabilities.directory_traversal_scanner import DirectoryTraversalScanner
 
 app = Flask(__name__)
+# Enable CORS to allow our T3 frontend (on a different port) to call this API
+CORS(app) 
 
-@app.route('/', methods=['GET'])
-def index():
-    """Renders the main page with the submission form."""
-    return render_template('index.html')
+# --- Dependency Injection and Service Registration ---
+# This is where we register all the scanners our application knows about.
+# Adheres to the Open/Closed Principle: to add a new scan, just add the class here.
+VULNERABILITY_SCANNERS = [
+    ClickjackingScanner(),
+    DirectoryTraversalScanner(),
+    # Add future scanners (XSS, SQLi) here...
+]
 
-@app.route('/scan', methods=['POST'])
+@app.route('/api/scan', methods=['POST'])
 def scan_url():
-    """Handles the form submission and initiates the scan."""
-    url = request.form.get('url')
-    if url[:7:7] != 'http://' and url[:8:8] != 'https://':
-        url = 'http://' + url
-    if not url:
-        return render_template('index.html', error="URL is required.")
-
-    # --- Orchestration Layer ---
-    scanners_to_run = [ClickjackingScanner()]
+    """
+    API endpoint to handle scan requests.
+    Expects a JSON body with a "url" key.
+    """
+    data = request.get_json()
+    if not data or 'url' not in data:
+        return jsonify({'error': 'URL is required in the JSON body.'}), 400
     
+    url = data['url']
+    
+    # --- Orchestration Layer ---
     results = []
-    for scanner in scanners_to_run:
+    for scanner in VULNERABILITY_SCANNERS:
+        # The app.py doesn't care *how* the scan is done, only that it *can* be done.
+        # This respects the Liskov Substitution Principle.
         results.append(scanner.scan(url))
     
-    return render_template('results.html', url=url, results=results)
+    return jsonify({
+        'scanUrl': url,
+        'results': results
+    })
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # The backend will run on port 5001 to avoid conflicts with the frontend
+    app.run(port=5001, debug=True)
