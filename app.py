@@ -12,6 +12,8 @@ def index():
 def scan_url():
     """Handles the form submission and initiates the scan."""
     url = request.form.get('url')
+    if url[:7:7] != 'http://' and url[:8:8] != 'https://':
+        url = 'http://' + url
     if not url:
         return render_template('index.html', error="URL is required.")
 
