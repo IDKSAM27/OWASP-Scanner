@@ -1,47 +1,43 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import CORS
+# app.py
 
-# Import our scanners
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from scanner.vulnerabilities.clickjacking_scanner import ClickjackingScanner
-from scanner.vulnerabilities.directory_traversal_scanner import DirectoryTraversalScanner
+from scanner.vulnerabilities.xss_scanner import XssScanner
 
 app = Flask(__name__)
-# Enable CORS to allow our T3 frontend (on a different port) to call this API
-CORS(app) 
+CORS(app)
 
-# --- Dependency Injection and Service Registration ---
-# This is where we register all the scanners our application knows about.
-# Adheres to the Open/Closed Principle: to add a new scan, just add the class here.
-VULNERABILITY_SCANNERS = [
-    ClickjackingScanner(),
-    DirectoryTraversalScanner(),
-    # Add future scanners (XSS, SQLi) here...
-]
-
+# Change this route to match what your frontend is calling
 @app.route('/api/scan', methods=['POST'])
 def scan_url():
-    """
-    API endpoint to handle scan requests.
-    Expects a JSON body with a "url" key.
-    """
+    """API endpoint to handle scan requests."""
     data = request.get_json()
     if not data or 'url' not in data:
-        return jsonify({'error': 'URL is required in the JSON body.'}), 400
-    
+        return jsonify({'error': 'URL is required in the request body.'}), 400
+
     url = data['url']
+
+    # Orchestration Layer
+    scanners_to_run = [
+        ClickjackingScanner(),
+        XssScanner(),
+    ]
     
-    # --- Orchestration Layer ---
     results = []
-    for scanner in VULNERABILITY_SCANNERS:
-        # The app.py doesn't care *how* the scan is done, only that it *can* be done.
-        # This respects the Liskov Substitution Principle.
-        results.append(scanner.scan(url))
+    for scanner in scanners_to_run:
+        try:
+            result = scanner.scan(url)
+            results.append(result)
+        except Exception as e:
+            # Handle individual scanner failures gracefully
+            results.append({
+                'vulnerability': scanner.__class__.__name__,
+                'vulnerable': False,
+                'details': f'Scanner error: {str(e)}'
+            })
     
-    return jsonify({
-        'scanUrl': url,
-        'results': results
-    })
+    return jsonify({'url': url, 'results': results})
 
 if __name__ == '__main__':
-    # The backend will run on port 5001 to avoid conflicts with the frontend
     app.run(port=5001, debug=True)
