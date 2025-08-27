@@ -4,6 +4,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from scanner.vulnerabilities.clickjacking_scanner import ClickjackingScanner
 from scanner.vulnerabilities.xss_scanner import XssScanner
+from scanner.vulnerabilities.directory_traversal_scanner import DirectoryTraversalScanner
+from scanner.vulnerabilities.sqli_scanner import SqliScanner
 
 app = Flask(__name__)
 CORS(app)
@@ -22,6 +24,8 @@ def scan_url():
     scanners_to_run = [
         ClickjackingScanner(),
         XssScanner(),
+        DirectoryTraversalScanner(),
+        SqliScanner(),
     ]
     
     results = []
